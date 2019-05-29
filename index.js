@@ -8,6 +8,40 @@ const db = require("./data/db");
 const server = express();
 server.use(express.json());
 
+// C U S T O M  M I D D L E W A R E
+function logger(req, res, next) {
+  console.log(
+    `[${new Date().toISOString()}] ${req.method} to ${req.url} ${req.get(
+      "Origin"
+    )}`
+  );
+
+  next();
+}
+
+function atGate(req, res, next) {
+  console.log("At the gate, about to be eaten");
+
+  next();
+}
+
+function auth(req, res, next) {
+  if (req.url === "/mellon") {
+    next();
+  } else {
+    res.send("you shall not pass");
+  }
+}
+
+server.use(logger);
+server.use(atGate);
+
+server.get('/mellon', auth, (req,res) => {
+  console.log('gate opening . . .');
+  console.log('inside and safe');
+  res.send('welcome traveler')
+})
+
 // S E R V E R - R E S P O N S E
 server.get("/", (req, res) => {
   res.send(`
@@ -47,12 +81,12 @@ server.get("/api/users/:id", (req, res) => {
   db.findById(req.params.id)
     .then(user => {
       if (user) {
-        res.status(200).json(user)
+        res.status(200).json(user);
       } else {
-      res.status(404).json({
-        message: "The user with the specified ID does not exist."
-      })
-    }
+        res.status(404).json({
+          message: "The user with the specified ID does not exist."
+        });
+      }
     })
 
     .catch(err => {
@@ -104,6 +138,14 @@ server.put("/api/users/:id", (req, res) => {
     });
 });
 
+// C U S T O M  M I D D L E W A R E (!! must be at the bottom of page !!)
+
+server.use(function(req, res) {
+  res.status(404).send(`Ain't got time for that`);
+});
+
+/////////
+
 server.listen(5000, () => {
-  console.log("\n*** Server Running on http://localhost:5000 ***\n")
+  console.log("\n*** Server Running on http://localhost:5000 ***\n");
 });
